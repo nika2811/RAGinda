@@ -6,7 +6,7 @@ __pycache__/
 .env
 .env.*
 # VS Code
-.vscode/
+*.env
 # OS
 .DS_Store
 Thumbs.db
