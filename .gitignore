@@ -17,3 +17,5 @@ Thumbs.db
 *.sqlite3
 *.db
 pure/
+.idea
+.venv
