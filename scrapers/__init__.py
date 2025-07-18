@@ -1,1 +1,1 @@
-from .zoommer_scraper import zommer_scraper
+from .zoommer_scraper import zommer_scraper_for_urls

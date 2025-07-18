@@ -3,13 +3,8 @@ import os
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "https://zoommer.ge"
-CATEGORIES = {
-    "smartphones": "/mobiluri-telefonebi-c855",
-    # "laptops": "/leptopis-brendebi-c717",
-    # "tv": "/televizorebi-c505"
-}
-MAX_PAGES = 1
 OUTPUT_PATH = "output/zoommer_scraping.json"
+MAX_PAGES = 1
 
 def clean_price(price_text):
     return float(price_text.replace("₾", "").replace(",", "").strip())
@@ -19,39 +14,27 @@ def crawl_product_detail(page, url):
         page.goto(url, timeout=60000)
         page.wait_for_selector("body", timeout=10000)
 
-        # 1. Title
-        try:
-            title = page.query_selector("h1")
-            title = title.inner_text().strip() if title else ""
-        except:
-            title = ""
+        title = page.query_selector("h1")
+        title = title.inner_text().strip() if title else ""
 
-        # 2. Description
-        try:
-            desc_el = page.query_selector("div:has-text('აღწერა')")  # fallback if structured
-            desc = desc_el.inner_text().strip() if desc_el else ""
-        except:
-            desc = ""
+        desc_el = page.query_selector("div:has-text('აღწერა')")
+        desc = desc_el.inner_text().strip() if desc_el else ""
 
-        # 3. Specs from product-specifications
         specs = {}
-        try:
-            container = page.query_selector("#product-specifications")
-            if container:
-                tables = container.query_selector_all("table")
-                for table in tables:
-                    rows = table.query_selector_all("tr")
-                    for row in rows:
-                        cells = row.query_selector_all("td")
-                        if len(cells) == 2:
-                            key_el = cells[0].query_selector("h4")
-                            val_el = cells[1].query_selector("h4")
-                            key = key_el.inner_text().strip() if key_el else ""
-                            val = val_el.inner_text().strip() if val_el else ""
-                            if key and val:
-                                specs[key] = val
-        except Exception as e:
-            print(f"⚠️ Failed parsing specs on {url}: {e}")
+        container = page.query_selector("#product-specifications")
+        if container:
+            tables = container.query_selector_all("table")
+            for table in tables:
+                rows = table.query_selector_all("tr")
+                for row in rows:
+                    cells = row.query_selector_all("td")
+                    if len(cells) == 2:
+                        key_el = cells[0].query_selector("h4")
+                        val_el = cells[1].query_selector("h4")
+                        key = key_el.inner_text().strip() if key_el else ""
+                        val = val_el.inner_text().strip() if val_el else ""
+                        if key and val:
+                            specs[key] = val
 
         return {
             "product_title_detail": title,
@@ -118,20 +101,18 @@ def crawl_category(playwright, category_name, relative_url):
     browser.close()
     return products
 
-def zommer_scraper():
+# 🆕 Exposed function to call from main.py
+def zommer_scraper_for_urls(subcategories):
     all_products = []
     os.makedirs("output", exist_ok=True)
 
     with sync_playwright() as playwright:
-        for name, url in CATEGORIES.items():
-            print(f"📦 Crawling category: {name}")
-            items = crawl_category(playwright, name, url)
+        for subcat in subcategories:
+            print(f"\n📦 Crawling: {subcat['name']}")
+            items = crawl_category(playwright, subcat['name'], subcat['url'])
             all_products.extend(items)
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(all_products, f, ensure_ascii=False, indent=2)
 
     print(f"✅ Saved {len(all_products)} products to {OUTPUT_PATH}")
-
-if __name__ == "__main__":
-    zommer_scraper()
