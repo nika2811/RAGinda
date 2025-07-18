@@ -1,19 +1,17 @@
+# scrapers/zoommer_scraper.py
+
 import json
 import os
 import time
 import asyncio
 import numpy as np
 from playwright.async_api import async_playwright, Browser
+import config # Import the configuration file
 
-BASE_URL = "https://zoommer.ge"
-OUTPUT_PATH = "output/zoommer_scraping.json"
-MAX_PAGES = 1
-CONCURRENT_DETAILS_LIMIT = 10
-
+# --- Removed hardcoded constants ---
 
 class ScrapingStats:
-    """A class to hold and report scraping performance statistics."""
-
+    # ... (class content remains unchanged) ...
     def __init__(self):
         self.total_start_time = time.perf_counter()
         self.total_duration = 0
@@ -34,20 +32,19 @@ class ScrapingStats:
         self.total_products = total_products
 
     def report(self):
-
         print("\n" + "="*50)
         print("📊 სკრეიპინგის პერფორმანსის რეპორტი 📊")
         print("="*50)
 
         if not self.total_products:
-            print("პროდუქტები ვერ მოიძებნა. რეპორტი ცარიელია.")
+            print("პროდუქტები ვერ მოიძებნა. რეპორტი ჩაიშალა.")
             print(f"საერთო დრო: {self.total_duration:.2f} წამი")
             return
         products_per_second = self.total_products / self.total_duration if self.total_duration > 0 else 0
         print(f"⏱️ საერთო დრო: {self.total_duration:.2f} წამი")
         print(f"🗃️ დამუშავებული კატეგორია: {self.total_categories}")
         print(f"📦 ჯამური პროდუქტი: {self.total_products}")
-        print(f"🚀 საშუალო წარმადობა: {products_per_second:.2f} პროდუქტი/წამში")
+        print(f"🚀 საშუალო დამუშავება: {products_per_second:.2f} პროდუქტი/წამში")
         print("-" * 50)
         print("\n🕒 კატეგორიების მიხედვით:")
         for cat in sorted(self.category_times, key=lambda x: x['duration'], reverse=True):
@@ -59,24 +56,23 @@ class ScrapingStats:
 
             print("\n" + "-"*50)
 
-            print("📄 პროდუქტის დეტალური გვერდის დამუშავება:")
+            print("📄 პროდუქტის დეტალური გვეშის მონაცემები:")
             print(f"  - საშუალო დრო: {avg_detail_time:.2f} წამი")
             print(f"  - უსწრაფესი: {min_detail_time:.2f} წამი")
-            print(f"  - უნელესი: {max_detail_time:.2f} წამი")
+            print(f"  - უმელესი: {max_detail_time:.2f} წამი")
 
         print("="*50)
 
-
 def clean_price(price_text):
     return float(price_text.replace("₾", "").replace(",", "").strip())
-
 
 async def crawl_product_detail(browser: Browser, url: str, stats: ScrapingStats):
     start_time = time.perf_counter()
     page = await browser.new_page()
     try:
         await page.route("**/*.{png,jpg,jpeg,webp,css,woff2}", lambda route: route.abort())
-        await page.goto(url, timeout=60000, wait_until='domcontentloaded')
+        # Use config for timeout
+        await page.goto(url, timeout=config.SCRAPER_PAGE_TIMEOUT, wait_until='domcontentloaded')
 
         title_el = await page.query_selector("h1")
         title = (await title_el.inner_text()).strip() if title_el else ""
@@ -100,8 +96,6 @@ async def crawl_product_detail(browser: Browser, url: str, stats: ScrapingStats)
                         if key and val:
                             specs[key] = val
 
-
-
         duration = time.perf_counter() - start_time
         stats.add_detail_page_time(duration)
         await page.close()
@@ -115,18 +109,20 @@ async def crawl_product_detail(browser: Browser, url: str, stats: ScrapingStats)
         await page.close()
         return {}
 
-
 async def crawl_category(browser: Browser, category_name: str, relative_url: str, stats: ScrapingStats):
     start_time = time.perf_counter()
     page = await browser.new_page()
     products_base_info = []
 
-    for page_num in range(1, MAX_PAGES + 1):
-        url = f"{BASE_URL}{relative_url}?page={page_num}"
+    # Use config for max pages
+    for page_num in range(1, config.SCRAPER_MAX_PAGES_PER_CATEGORY + 1):
+        # Use config for base URL
+        url = f"{config.WEBSITE_BASE_URL}{relative_url}?page={page_num}"
         print(f"🔎 Loading category page {url}")
         try:
-            await page.goto(url, timeout=60000, wait_until='domcontentloaded')
-            await page.wait_for_selector(".sc-1a03f073-0", timeout=10000)
+            # Use config for timeouts
+            await page.goto(url, timeout=config.SCRAPER_PAGE_TIMEOUT, wait_until='domcontentloaded')
+            await page.wait_for_selector(".sc-1a03f073-0", timeout=config.SCRAPER_SELECTOR_TIMEOUT)
         except Exception as e:
             print(f"⚠️ Could not load or find products on page {page_num}: {e}. Moving on.")
             break
@@ -139,8 +135,8 @@ async def crawl_category(browser: Browser, category_name: str, relative_url: str
         for card in cards:
             title_el = await card.query_selector(".sc-1a03f073-11")
             title = (await title_el.inner_text()).strip() if title_el else "N/A"
-            link = BASE_URL + await title_el.get_attribute("href") if title_el else ""
-
+            # Use config for base URL
+            link = config.WEBSITE_BASE_URL + await title_el.get_attribute("href") if title_el else ""
 
             price_el = await card.query_selector(".sc-1a03f073-8")
             price_text = await price_el.inner_text() if price_el else "0"
@@ -158,9 +154,9 @@ async def crawl_category(browser: Browser, category_name: str, relative_url: str
     if products_base_info:
         print(f"🔗 Found {len(products_base_info)} product links. Fetching details concurrently...")
         
-        semaphore = asyncio.Semaphore(CONCURRENT_DETAILS_LIMIT)
+        # Use config for concurrent requests limit
+        semaphore = asyncio.Semaphore(config.SCRAPER_CONCURRENT_REQUESTS)
         
-
         async def fetch_with_semaphore(prod_info):
             async with semaphore:
                 detail_data = await crawl_product_detail(browser, prod_info['link'], stats)
@@ -174,16 +170,12 @@ async def crawl_category(browser: Browser, category_name: str, relative_url: str
     stats.add_category_snapshot(category_name, duration, len(final_products))
     return final_products
 
-
 async def zommer_scraper_for_urls(subcategories):
     all_products = []
-    os.makedirs("output", exist_ok=True)
+    # Use config for output directory
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     
     stats = ScrapingStats()
-
-
-    stats = ScrapingStats()
-
 
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
@@ -196,7 +188,8 @@ async def zommer_scraper_for_urls(subcategories):
     stats.finalize(len(all_products))
     stats.report()
 
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+    # Use config for output file path
+    with open(config.SCRAPED_DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(all_products, f, ensure_ascii=False, indent=2)
 
-    print(f"\n✅ Saved {len(all_products)} products to {OUTPUT_PATH}")
+    print(f"\n✅ Saved {len(all_products)} products to {config.SCRAPED_DATA_FILE}")
