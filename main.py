@@ -1,10 +1,12 @@
 import json
 import asyncio
+
 import os
 
 from retriever import HybridRetriever, find_category_with_gemini_rag, load_categories_from_file
 from scrapers.zoommer_scraper import zommer_scraper_for_urls
 from embedder import embed_all_products, save_faiss_index, load_products, search_similar
+
 
 QUERIES = [
     # "სამსუნგის საათი მინდა ვიყიდო",
@@ -35,6 +37,8 @@ async def main():
         try:
             parts = gemini_result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0]
             final = parts.get('json') or json.loads(parts.get('text', '{}'))
+
+
 
             if "error" in final:
                 print(f"  ⚠️ Gemini: {final['error']}")

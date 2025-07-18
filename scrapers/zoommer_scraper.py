@@ -34,9 +34,11 @@ class ScrapingStats:
         self.total_products = total_products
 
     def report(self):
-        print("\n" + "=" * 50)
+
+        print("\n" + "="*50)
         print("📊 სკრეიპინგის პერფორმანსის რეპორტი 📊")
-        print("=" * 50)
+        print("="*50)
+
         if not self.total_products:
             print("პროდუქტები ვერ მოიძებნა. რეპორტი ცარიელია.")
             print(f"საერთო დრო: {self.total_duration:.2f} წამი")
@@ -54,12 +56,15 @@ class ScrapingStats:
             avg_detail_time = np.mean(self.detail_page_times)
             min_detail_time = np.min(self.detail_page_times)
             max_detail_time = np.max(self.detail_page_times)
-            print("\n" + "-" * 50)
+
+            print("\n" + "-"*50)
+
             print("📄 პროდუქტის დეტალური გვერდის დამუშავება:")
             print(f"  - საშუალო დრო: {avg_detail_time:.2f} წამი")
             print(f"  - უსწრაფესი: {min_detail_time:.2f} წამი")
             print(f"  - უნელესი: {max_detail_time:.2f} წამი")
-        print("=" * 50)
+
+        print("="*50)
 
 
 def clean_price(price_text):
@@ -94,6 +99,8 @@ async def crawl_product_detail(browser: Browser, url: str, stats: ScrapingStats)
                         val = (await val_el.inner_text()).strip() if val_el else ""
                         if key and val:
                             specs[key] = val
+
+
 
         duration = time.perf_counter() - start_time
         stats.add_detail_page_time(duration)
@@ -134,24 +141,25 @@ async def crawl_category(browser: Browser, category_name: str, relative_url: str
             title = (await title_el.inner_text()).strip() if title_el else "N/A"
             link = BASE_URL + await title_el.get_attribute("href") if title_el else ""
 
+
             price_el = await card.query_selector(".sc-1a03f073-8")
             price_text = await price_el.inner_text() if price_el else "0"
             price = clean_price(price_text)
 
             img_el = await card.query_selector("img.sc-1a03f073-3")
             img = await img_el.get_attribute("src") if img_el else ""
-
+            
             if link:
-                products_base_info.append(
-                    {"category": category_name, "title": title, "price": price, "link": link, "image": img})
+                products_base_info.append({"category": category_name, "title": title, "price": price, "link": link, "image": img})
 
     await page.close()
-
+    
     final_products = []
     if products_base_info:
         print(f"🔗 Found {len(products_base_info)} product links. Fetching details concurrently...")
-
+        
         semaphore = asyncio.Semaphore(CONCURRENT_DETAILS_LIMIT)
+        
 
         async def fetch_with_semaphore(prod_info):
             async with semaphore:
@@ -170,8 +178,12 @@ async def crawl_category(browser: Browser, category_name: str, relative_url: str
 async def zommer_scraper_for_urls(subcategories):
     all_products = []
     os.makedirs("output", exist_ok=True)
+    
+    stats = ScrapingStats()
+
 
     stats = ScrapingStats()
+
 
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
