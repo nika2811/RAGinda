@@ -1,3 +1,6 @@
 python-dotenv
 requests
 playwright
+google-generativeai
+faiss-cpu
+tqdm
