@@ -1,14 +1,19 @@
 import json
 import asyncio
+
+import os
+
 from retriever import HybridRetriever, find_category_with_gemini_rag, load_categories_from_file
-from scrapers.zoommer_scraper import zommer_scraper_for_urls 
+from scrapers.zoommer_scraper import zommer_scraper_for_urls
+from embedder import embed_all_products, save_faiss_index, load_products, search_similar
+
 
 QUERIES = [
-    "სამსუნგის საათი მინდა ვიყიდო",
+    # "სამსუნგის საათი მინდა ვიყიდო",
     "ლეპტოპი მჭირდება, თან რომ თამაშებიც გამიქაჩოს",
-    "აიფონის დამტენი ხომ არ გაქვთ?",
-    "პოვერ ბანკი",
-    "ველოსიპედი"
+    # "აიფონის დამტენი ხომ არ გაქვთ?",
+    # "პოვერ ბანკი",
+    # "ველოსიპედი"
 ]
 
 async def main():
@@ -32,7 +37,9 @@ async def main():
         try:
             parts = gemini_result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0]
             final = parts.get('json') or json.loads(parts.get('text', '{}'))
-            
+
+
+
             if "error" in final:
                 print(f"  ⚠️ Gemini: {final['error']}")
             elif "subcategory_url" in final and final["subcategory_url"] not in unique_urls:
@@ -52,6 +59,21 @@ async def main():
         await zommer_scraper_for_urls(selected_subcategories)
     else:
         print("❌ No subcategories selected for scraping.")
+        return
+
+    # === Step 2: Embed scraped data and save to FAISS ===
+    print("\n🔮 Starting embedding of scraped products...")
+    products = load_products("output/zoommer_scraping.json")
+    vectors, metadata = embed_all_products(products)
+    save_faiss_index(vectors, metadata)
+
+    # === Step 3: Test the search ===
+    print("\n🔍 Running example semantic search...")
+    example_query = "დიდი ბატარიით სმარტ საათი NFC-ით"
+    results = search_similar(example_query)
+
+    for r in results:
+        print(f"- {r['title']} | {r['price']} ლარი | {r['category']}")
 
 if __name__ == "__main__":
     asyncio.run(main())

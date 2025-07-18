@@ -1,6 +1,8 @@
 python-dotenv
 requests
 playwright
+faiss-cpu
+tqdm
 sentence-transformers
 scikit-learn
 numpy
