@@ -2,40 +2,57 @@ import gradio as gr
 import requests
 
 API_URL = "http://localhost:8000/search"
-history = []
 
 def chatbot_response(message, history):
+    payload = {"query": message, "max_results": 3}
     try:
-        # Send user query to FastAPI search endpoint
-        payload = {"query": message, "max_results": 3}
-        response = requests.post(API_URL, json=payload)
+        response = requests.post(API_URL, json=payload, timeout=10)
         response.raise_for_status()
         data = response.json()
 
-        # Format the result
-        if data["total_results"] == 0:
-            reply = "ვერაფერი მოიძებნა. სცადე სხვა შეკითხვა 🧐"
-        else:
-            reply = "აი, რამდენიმე ვარიანტი 👇:\n"
-            for i, product in enumerate(data["products"], 1):
-                title = product["title"]
-                price = product["price"]
-                url = product.get("url", "#")
-                reply += f"{i}. [{title}]({url}) - {price}\n"
+        if data.get("total_results", 0) == 0:
+            return {"role": "assistant", "content": "🙁 ვერაფერი ვიპოვე. სცადე სხვა სიტყვებით!"}
+
+        reply = "🔎 აირჩიე საუკეთესო ვარიანტებიდან:\n\n"
+        for i, product in enumerate(data["products"], 1):
+            title = product.get("title", "Untitled")
+            price = product.get("price", "ფასი უცნობია")
+            url = product.get("url", "#")
+            reply += f"**{i}. [{title}]({url})**\n💵 ფასი: {price}\n\n"
 
         return {"role": "assistant", "content": reply}
 
-    except requests.exceptions.RequestException as e:
-        return {"role": "assistant", "content": f"❌ შეცდომა სერვერთან კავშირისას: {str(e)}"}
+    except Exception as e:
+        return {"role": "assistant", "content": "🚨 შეცდომა სერვერთან. სცადე მოგვიანებით."}
 
 chat_interface = gr.ChatInterface(
     fn=chatbot_response,
-    title="🛍️ RAGinda",
-    theme="soft",
-    chatbot=gr.Chatbot(height=500, type="messages", show_copy_button=True),
-    textbox=gr.Textbox(placeholder="Type your question here...", scale=7),
-    examples=["სმარტფონი 1000 ლარამდე", "საუკეთესო ლეპტოპი პროგრამირებისთვის"],
-    type="messages",
+    title="🛍️ RAGinda — ჭკვიანი პროდუქტის ასისტენტი",
+    description="კითხე პროდუქტზე და დაგეხმარები საუკეთესო შეთავაზებების პოვნაში 🧠",
+    theme=gr.themes.Soft(
+        primary_hue="violet",
+        secondary_hue="gray",
+        radius_size="lg",
+        font=[gr.themes.GoogleFont("Inter")],
+    ),
+    chatbot=gr.Chatbot(
+        height=550,
+        type="messages",
+        show_copy_button=True,
+        bubble_full_width=False,
+        avatar_images=("https://img.icons8.com/emoji/48/user-emoji.png", "https://img.icons8.com/emoji/48/robot-emoji.png")
+    ),
+    textbox=gr.Textbox(
+        placeholder="მაგ: ლეპტოპი თამაშებისთვის 1500 ლარამდე",
+        label="შეიყვანე შენი მოთხოვნა",
+        scale=8
+    ),
+    examples=[
+        "სმარტფონი 1000 ლარამდე",
+        "მუშაობისთვის კარგი მონიტორი",
+        "აუდიო სისტემა მაღალი ხმით"
+    ],
+    type="messages"
 )
 
 if __name__ == "__main__":
