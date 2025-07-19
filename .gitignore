@@ -23,5 +23,4 @@ pure/
 # Output and cache
 output/
 *.faiss
-*.json
 *.cache
