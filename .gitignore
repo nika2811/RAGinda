@@ -24,3 +24,15 @@ pure/
 output/
 *.faiss
 *.cache
+
+# Test and temporary files
+*test*.py.bak
+*_test_*.py
+temp_*.py
+test_*.tmp
+*.backup
+*_backup.*
+
+# Documentation build files
+docs/_build/
+docs/build/
