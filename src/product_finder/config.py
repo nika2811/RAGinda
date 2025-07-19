@@ -29,6 +29,10 @@ HYBRID_SCORE_THRESHOLD = 0.2
 
 # --- Semantic Search (FAISS) ---
 SEARCH_TOP_K = 5
+SIMILARITY_THRESHOLD = 0.3  # Minimum similarity score to include result
+CATEGORY_BOOST_FACTOR = 1.2  # Boost score for category-matching products
+TERM_MATCH_BOOST = 0.1  # Boost per matching query term in title
+MAX_SEARCH_EXPANSION = 3  # Multiplier for initial search results before filtering
 
 # --- Gemini API ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

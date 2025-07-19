@@ -7,3 +7,14 @@ scikit-learn
 numpy
 playwright
 tqdm
+
+# FastAPI and server dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+
+# Async file I/O
+aiofiles>=23.2.0
+
+# Testing dependencies (optional)
+aiohttp>=3.9.0
