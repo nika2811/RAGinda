@@ -1,8 +1,9 @@
+# requirements.txt
 python-dotenv
 requests
-playwright
-faiss-cpu
-tqdm
 sentence-transformers
+faiss-cpu
 scikit-learn
 numpy
+playwright
+tqdm

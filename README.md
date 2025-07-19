@@ -1,31 +1,14 @@
+# Product Search RAG
 
+This project implements a Retrieval-Augmented Generation (RAG) system for product search, using hybrid retrieval and LLM integration (Gemini).
 
-# Scrap.py — Workflow
+## Structure
+- `main.py`: Main entry point
+- `src/product_finder/`: Core logic, scraping, and utilities
+- `data/`: Initial data files
+- `output/`: Generated files (not tracked by git)
 
-## სისტემის მუშაობის ეტაპები
-
-### მოსამზადებელი ფაზა (ერთჯერადი)
-1. **მონაცემების ჩატვირთვა** — პროგრამა კითხულობს `categories.json`-ს და იგებს, რა კატეგორიები აქვს.
-2. **ვექტორული ინდექსის აგება** — AI მოდელი (SentenceTransformer) ყველა ქვეკატეგორიის აღწერას გარდაქმნის მათემატიკურ "ანაბეჭდად" (ვექტორად) და ქმნის სწრაფ საძიებო ინდექსს.
-
-### საბრძოლო რეჟიმი (ყოველი მოთხოვნისას)
-1. **HybridRetriever.search** — მომხმარებლის კითხვაზე სისტემა ატარებს:
-   - სემანტიკურ ძებნას (აზრობრივი მსგავსება)
-   - საკვანძო სიტყვების ძებნას (ზუსტი დამთხვევა)
-   - აერთიანებს შედეგებს და არჩევს ტოპ 3 კანდიდატს
-2. **Gemini-ს გამოძახება** — ამ 3 კანდიდატს და კითხვას აგზავნის Gemini-ს, რომელიც ირჩევს საუკეთესოს.
-3. **პასუხის ჩვენება** — პროგრამა იღებს subcategory_url-ს და მომხმარებელს უჩვენებს რეკომენდებულ ლინკს.
-
-
-## ვიზუალური Workflow
-
-```mermaid
-graph TD
-    A[პროგრამის გაშვება] --> B[მოსამზადებელი ეტაპი]
-    B -->|categories.json-ის წაკითხვა| B1[ვექტორული ინდექსის შექმნა]
-    B1 --> C[მომხმარებლის კითხვა]
-    C --> D[Hybrid Retriever-ის ძებნა]
-    D -->|ტოპ 3 კანდიდატი| E[Gemini-ს გამოძახება]
-    E -->|JSON პასუხი| F[შედეგის ჩვენება]
-```
-
+## Setup
+1. Add your Gemini API key to `.env`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Run: `python main.py`

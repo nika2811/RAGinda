@@ -19,3 +19,9 @@ Thumbs.db
 pure/
 .idea
 .venv
+
+# Output and cache
+output/
+*.faiss
+*.json
+*.cache
