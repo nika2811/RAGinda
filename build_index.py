@@ -52,43 +52,56 @@ class OfflineIndexBuilder:
         
     async def load_categories(self) -> List[Dict[str, Any]]:
         """
-        Load product categories from configuration file.
-        
+        Load product categories from config.CATEGORIES_FILE.
         Returns:
             List of category dictionaries
-            
         Raises:
             FileNotFoundError: If categories file doesn't exist
             ValueError: If categories file is empty or invalid
         """
-        logger.info("Loading product categories...")
-        
+        logger.info(f"Loading product categories from {config.CATEGORIES_FILE}...")
         try:
             categories = await asyncio.to_thread(
-                load_categories_from_file, 
+                load_categories_from_file,
                 config.CATEGORIES_FILE
             )
-            
             if not categories:
                 raise ValueError("Categories file is empty or invalid")
-                
-            logger.info(f"Successfully loaded {len(categories)} categories")
+            logger.info(f"Successfully loaded {len(categories)} categories from {config.CATEGORIES_FILE}")
             return categories
-            
         except Exception as e:
             logger.error(f"Failed to load categories: {e}")
             raise
             
     async def scrape_products(self, categories: List[Dict[str, Any]], test_limit: int = 0) -> List[Dict[str, Any]]:
-        """Asynchronously scrapes products from specified categories."""
+        """Asynchronously scrapes products from specified categories or test URL list."""
         all_subcategories = []
-        for category in categories:
-            for subcategory in category.get('subcategories', []):
-                all_subcategories.append({
-                    "name": subcategory.get('subcategory_name'),
-                    "url": subcategory.get('subcategory_url')
-                })
-        
+        # Handle test_categories.json format: {"main_category_urls": [ ... ]}
+        if (
+            isinstance(categories, dict)
+            and "main_category_urls" in categories
+            and isinstance(categories["main_category_urls"], list)
+        ):
+            logger.info("Detected test_categories.json format. Converting URLs to subcategory format...")
+            for url in categories["main_category_urls"]:
+                all_subcategories.append({"name": url, "url": url})
+        # Handle legacy list-of-dicts format
+        elif isinstance(categories, list) and categories and isinstance(categories[0], dict):
+            for category in categories:
+                for subcategory in category.get('subcategories', []):
+                    all_subcategories.append({
+                        "name": subcategory.get('subcategory_name'),
+                        "url": subcategory.get('subcategory_url')
+                    })
+        # Handle list of URLs (if loaded as a list of strings)
+        elif isinstance(categories, list) and categories and isinstance(categories[0], str):
+            logger.info("Detected list of URLs. Converting to subcategory format...")
+            for url in categories:
+                all_subcategories.append({"name": url, "url": url})
+        else:
+            logger.error("Unknown categories format. Cannot scrape products.")
+            return []
+
         if test_limit > 0:
             logger.info(f"Running in test mode, limiting to {test_limit} categories.")
             all_subcategories = all_subcategories[:test_limit]
@@ -99,10 +112,10 @@ class OfflineIndexBuilder:
 
         logger.info(f"Starting scraping for {len(all_subcategories)} subcategories...")
         start_time = time.time()
-        
+
         # Scraper returns products directly with no intermediate file I/O
         products = await zommer_scraper_for_urls(all_subcategories)
-        
+
         scraping_time = time.time() - start_time
         logger.info(f"Scraping completed in {scraping_time:.2f}s. Found {len(products)} products.")
         return products
@@ -157,16 +170,13 @@ class OfflineIndexBuilder:
         pipeline_start = time.time()
         mode = "TEST" if test_limit > 0 else "FULL"
         logger.info(f"--- Starting {mode} offline indexing pipeline ---")
-        
         try:
-            categories = await asyncio.to_thread(load_categories_from_file, config.CATEGORIES_FILE)
+            categories = await self.load_categories()
             if not categories:
                 raise ValueError("Categories file is empty or invalid.")
-
             products = await self.scrape_products(categories, test_limit)
             embeddings, metadata = await self.generate_embeddings_batch(products)
             await self.build_optimized_faiss_index(embeddings, metadata)
-            
             pipeline_time = time.time() - pipeline_start
             logger.info(f"--- {mode} pipeline completed successfully in {pipeline_time:.2f}s ---")
         except Exception as e:
