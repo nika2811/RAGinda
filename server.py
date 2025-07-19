@@ -149,18 +149,24 @@ async def search_products(request: SearchRequest):
         
     try:
         search_results = await search_service.search(request.query, request.max_results)
-        
+
+        # Ensure all product prices are strings
+        products = search_results["products"]
+        for product in products:
+            if "price" in product and not isinstance(product["price"], str):
+                product["price"] = str(product["price"])
+
         response_time = (time.time() - start_time) * 1000
-        
+
         response = SearchResponse(
             query=request.query,
             selected_category=search_results["selected_category"],
-            products=search_results["products"],
-            total_results=len(search_results["products"]),
+            products=products,
+            total_results=len(products),
             response_time_ms=round(response_time, 2),
             timestamp=datetime.now().isoformat()
         )
-        
+
         logger.info(f"Search for '{request.query}' completed in {response_time:.2f}ms")
         return response
         
