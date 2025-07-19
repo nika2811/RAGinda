@@ -128,7 +128,6 @@ async def zommer_scraper_for_urls(subcategories):
     stats.finalize(len(all_products))
     stats.report()
 
-    with open(config.SCRAPED_DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(all_products, f, ensure_ascii=False, indent=2)
-
-    print(f"\n✅ შენახულია {len(all_products)} პროდუქტი ფაილში: {config.SCRAPED_DATA_FILE}")
+    # REFACTOR: Return products directly instead of writing to file
+    print(f"\n✅ სკრეიპინგი დასრულდა: {len(all_products)} პროდუქტი")
+    return all_products
