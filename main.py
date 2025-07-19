@@ -40,21 +40,47 @@ async def main():
     final_choice = find_category_with_gemini_rag(user_query, retrieved)
     print(f"--- [DEBUG 8] მიღებულია პასუხი LLM-სგან: {final_choice}")
 
+
     if "error" in final_choice:
         print(f"⚠️ LLM: {final_choice['error']}")
         return
-    if "subcategory_url" not in final_choice:
+
+    # თუ პასუხი არის სია და სიგრძე > 1, ყველა subcategory-ზე გაუშვას სკრეიპინგი
+    selected_subcategories = []
+    if isinstance(final_choice, list):
+        if len(final_choice) > 1:
+            for subcat in final_choice:
+                if "subcategory_name" in subcat and "subcategory_url" in subcat:
+                    full_url = config.WEBSITE_BASE_URL + subcat["subcategory_url"]
+                    print(f"✅ LLM-მა შეარჩია: {subcat['subcategory_name']} → {full_url}")
+                    selected_subcategories.append({
+                        "name": subcat["subcategory_name"],
+                        "url": subcat["subcategory_url"]
+                    })
+        elif len(final_choice) == 1 and "subcategory_name" in final_choice[0] and "subcategory_url" in final_choice[0]:
+            subcat = final_choice[0]
+            full_url = config.WEBSITE_BASE_URL + subcat["subcategory_url"]
+            print(f"✅ LLM-მა შეარჩია: {subcat['subcategory_name']} → {full_url}")
+            selected_subcategories.append({
+                "name": subcat["subcategory_name"],
+                "url": subcat["subcategory_url"]
+            })
+        else:
+            print("⚠️ LLM-მა ვერ შეარჩია კატეგორია.")
+            return
+    elif "subcategory_url" in final_choice and "subcategory_name" in final_choice:
+        full_url = config.WEBSITE_BASE_URL + final_choice["subcategory_url"]
+        print(f"✅ LLM-მა შეარჩია: {final_choice['subcategory_name']} → {full_url}")
+        selected_subcategories.append({
+            "name": final_choice["subcategory_name"],
+            "url": final_choice["subcategory_url"]
+        })
+    else:
         print("⚠️ LLM-მა ვერ შეარჩია კატეგორია.")
         return
 
-    full_url = config.WEBSITE_BASE_URL + final_choice["subcategory_url"]
-    print(f"✅ LLM-მა შეარჩია: {final_choice['subcategory_name']} → {full_url}")
-    selected_subcategories = [{
-        "name": final_choice["subcategory_name"],
-        "url": final_choice["subcategory_url"]
-    }]
-
-    print("\n--- ეტაპი 2: მიზნობრივი სკრეიპინგი ---")
+    print(f"\n--- ეტაპი 2: მიზნობრივი სკრეიპინგი ---")
+    print(f"[INFO] სკრეიპინგისთვის გადაეცემა {len(selected_subcategories)} კატეგორია: {[s['name'] for s in selected_subcategories]}")
     await zommer_scraper_for_urls(selected_subcategories)
 
     print("\n--- ეტაპი 3: ემბედინგი და ვექტორული ბაზის შექმნა ---")
