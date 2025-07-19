@@ -17,7 +17,7 @@ def chatbot_response(message, history):
         for i, product in enumerate(data["products"], 1):
             title = product.get("title", "Untitled")
             price = product.get("price", "ფასი უცნობია")
-            url = product.get("url", "#")
+            url = product.get("link", "#")
             reply += f"**{i}. [{title}]({url})**\n💵 ფასი: {price}\n\n"
 
         return {"role": "assistant", "content": reply}
