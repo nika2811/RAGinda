@@ -14,7 +14,7 @@ Features:
 import asyncio
 import time
 import logging
-import argparse  # REFACTOR: Using argparse for a better CLI
+import argparse  # Using argparse for a better CLI
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
@@ -26,7 +26,6 @@ from sentence_transformers import SentenceTransformer
 from src.product_finder import config
 from src.product_finder.utils.data_io import load_categories_from_file
 from src.product_finder.utils.async_utils import write_json_async, read_json_async
-# REFACTOR: Scraper now returns data directly, not writing to a file inside its own logic
 from src.product_finder.scraping.zoommer_scraper import zommer_scraper_for_urls
 from src.product_finder.core_logic.embedding import build_embedding_text
 
@@ -80,7 +79,6 @@ class OfflineIndexBuilder:
             logger.error(f"Failed to load categories: {e}")
             raise
             
-    # REFACTOR: Consolidated scraping logic into a single method.
     async def scrape_products(self, categories: List[Dict[str, Any]], test_limit: int = 0) -> List[Dict[str, Any]]:
         """Asynchronously scrapes products from specified categories."""
         all_subcategories = []
@@ -102,7 +100,7 @@ class OfflineIndexBuilder:
         logger.info(f"Starting scraping for {len(all_subcategories)} subcategories...")
         start_time = time.time()
         
-        # REFACTOR: Scraper now returns products directly. No intermediate file I/O.
+        # Scraper returns products directly with no intermediate file I/O
         products = await zommer_scraper_for_urls(all_subcategories)
         
         scraping_time = time.time() - start_time
@@ -176,7 +174,7 @@ class OfflineIndexBuilder:
             raise
 
 async def main():
-    # REFACTOR: Using argparse for proper command-line argument handling
+    # Using argparse for proper command-line argument handling
     parser = argparse.ArgumentParser(description="Offline Indexing Pipeline for AI Product Search.")
     parser.add_argument(
         "--test",

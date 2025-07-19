@@ -11,7 +11,7 @@ from .. import config
 from .llm import find_category_with_gemini_rag
 from .retriever import HybridRetriever
 
-# REFACTOR: This new service class encapsulates all search-related logic,
+# This service class encapsulates all search-related logic,
 # decoupling it from the FastAPI server layer.
 
 class SearchService:

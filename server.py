@@ -18,27 +18,24 @@ import logging
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
 from datetime import datetime
-from pathlib import Path
 
 import faiss
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 
 from src.product_finder import config
-from src.product_finder.utils.data_io import load_categories_from_file, load_products
+from src.product_finder.utils.data_io import load_categories_from_file
 from src.product_finder.utils.async_utils import read_json_async
 from src.product_finder.core_logic.retriever import HybridRetriever
-# REFACTOR: Import the new centralized search service
 from src.product_finder.core_logic.search_service import SearchService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# REFACTOR: Use a dictionary to hold application state, which is cleaner than globals.
+# Application state dictionary to hold all components
 app_state: Dict[str, Any] = {}
 
 
@@ -67,7 +64,7 @@ async def lifespan(app: FastAPI):
         # Initialize retriever (depends on categories)
         hybrid_retriever = HybridRetriever(categories)
 
-        # REFACTOR: Initialize the single SearchService with all loaded components
+        # Initialize the SearchService with all loaded components
         app_state["search_service"] = SearchService(
             embedding_model=embedding_model,
             faiss_index=faiss_index,
@@ -96,7 +93,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AI-Powered Product Search API",
     description="High-performance semantic search API for e-commerce products",
-    version="1.1.0",  # REFACTOR: Version bump
+    version="1.1.0",
     lifespan=lifespan
 )
 
@@ -117,7 +114,11 @@ class ProductResult(BaseModel):
     title: str
     price: str
     category: str
-    url: Optional[str] = None
+    url: Optional[str] = Field(None, alias="link")
+    image: Optional[str] = None
+    product_title_detail: Optional[str] = None
+    description: Optional[str] = None
+    specs: Optional[Dict[str, str]] = None
     final_score: Optional[float] = Field(None, alias="similarity_score")  # Use alias for frontend compatibility
 
 class CategoryResult(BaseModel):
@@ -142,7 +143,7 @@ async def search_products(request: SearchRequest):
     """
     start_time = time.time()
     
-    # REFACTOR: The entire logic is now in one clean call.
+    # Get the search service from application state
     search_service: Optional[SearchService] = app_state.get("search_service")
     if not search_service:
         raise HTTPException(status_code=503, detail="Search service is not available.")
@@ -150,7 +151,7 @@ async def search_products(request: SearchRequest):
     try:
         search_results = await search_service.search(request.query, request.max_results)
 
-        # Ensure all product prices are strings
+        # Ensure all product prices are strings and include all detailed information
         products = search_results["products"]
         for product in products:
             if "price" in product and not isinstance(product["price"], str):

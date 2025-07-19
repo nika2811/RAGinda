@@ -128,6 +128,6 @@ async def zommer_scraper_for_urls(subcategories):
     stats.finalize(len(all_products))
     stats.report()
 
-    # REFACTOR: Return products directly instead of writing to file
+    # Return products directly instead of writing to file
     print(f"\n✅ სკრეიპინგი დასრულდა: {len(all_products)} პროდუქტი")
     return all_products

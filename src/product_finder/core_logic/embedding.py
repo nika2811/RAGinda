@@ -3,8 +3,7 @@ from typing import Dict
 
 from .. import config
 
-# REFACTOR: Removed the global embedding_model to avoid conflicts with server.py
-# Models should be managed centrally by the application state
+# Models are now managed centrally by the application state
 
 def build_embedding_text(product: dict) -> str:
     """

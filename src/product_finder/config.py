@@ -3,19 +3,19 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# REFACTOR: Made path discovery more robust to run from any location.
+# Made path discovery more robust to run from any location
 project_root = Path(__file__).resolve().parents[2]
 load_dotenv(os.path.join(project_root, '.env'))
 
 # --- Paths ---
 OUTPUT_DIR = os.path.join(project_root, "output")
 DATA_DIR = os.path.join(project_root, "data")
-CONFIG_DIR = os.path.join(project_root, "config")  # REFACTOR: Added config dir
+CONFIG_DIR = os.path.join(project_root, "config")
 CATEGORIES_FILE = os.path.join(DATA_DIR, "categories.json")
 SCRAPED_DATA_FILE = os.path.join(OUTPUT_DIR, "zoommer_scraping.json")
 FAISS_INDEX_FILE = os.path.join(OUTPUT_DIR, "index.faiss")
 FAISS_METADATA_FILE = os.path.join(OUTPUT_DIR, "metadata.json")
-QUERY_EXPANSIONS_FILE = os.path.join(CONFIG_DIR, "query_expansions.json")  # REFACTOR: For synonyms
+QUERY_EXPANSIONS_FILE = os.path.join(CONFIG_DIR, "query_expansions.json")
 
 # --- Models ---
 EMBEDDER_MODEL = "intfloat/multilingual-e5-small"
@@ -30,7 +30,7 @@ HYBRID_KEYWORD_WEIGHT = 0.4
 HYBRID_SCORE_THRESHOLD = 0.2
 
 # --- Semantic Search (FAISS) ---
-SEARCH_TOP_K = 10  # REFACTOR: Increased to get more candidates for diversification
+SEARCH_TOP_K = 10  # Increased to get more candidates for diversification
 SIMILARITY_THRESHOLD = 0.3  # Minimum similarity score to include result
 CATEGORY_BOOST_FACTOR = 1.2  # Boost score for category-matching products
 TERM_MATCH_BOOST = 0.1  # Boost per matching query term in title
@@ -38,7 +38,7 @@ MAX_SEARCH_EXPANSION = 3  # Multiplier for initial search results before filteri
 
 # --- Gemini API ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# REFACTOR: Check for API key presence at startup
+# Check for API key presence at startup
 if not GEMINI_API_KEY:
     print("WARNING: GEMINI_API_KEY is not set. Category selection will be degraded.")
 GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"

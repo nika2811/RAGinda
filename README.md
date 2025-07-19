@@ -197,10 +197,21 @@ curl -X POST "http://localhost:8000/search" \
       "title": "Asus ROG Ally X RC72LA Z1 Extreme",
       "price": "2699.0",
       "category": "skhva-konsolebi",
+      "link": "https://zoommer.ge/gaming/asus-rog-ally-x-rc72la-z1-extreme-handheld-video-game-console-24gb-ram-1tb-black-p43722",
+      "image": "/_next/image?url=https%3A%2F%2Fs3.zoommer.ge%2Fsite%2Fcfe525d9-45d1-458d-a266-5c84a586ba90_Thumb.jpeg&w=384&q=50",
+      "product_title_detail": "Asus ROG Ally X RC72LA Z1 Extreme Handheld Video Game Console 24GB RAM 1TB Black",
       "description": "",
       "specs": {
         "ბრენდი:": "Asus",
-        "პროცესორი:": "AMD Ryzen Z1 Extreme"
+        "პროცესორი:": "AMD Ryzen Z1 Extreme",
+        "მეხსიერება:": "24 GB",
+        "შენახვის ტიპი:": "SSD",
+        "ეკრანის ზომა:": "7 inches",
+        "რეზოლუცია:": "1920 x 1080 (FHD)",
+        "გრაფიკული ჩიპი:": "AMD Radeon",
+        "ელემენტის ხანგრძლივობა:": "Up To 2.4 h",
+        "წონა:": "678 g",
+        "ფერი:": "Black"
       },
       "similarity_score": 1.0
     }
@@ -210,6 +221,24 @@ curl -X POST "http://localhost:8000/search" \
   "timestamp": "2025-07-19T14:53:02.273740"
 }
 ```
+
+**რესპონსის ველების აღწერა:**
+
+**პროდუქტის ინფორმაცია (products):**
+- `title`: პროდუქტის მოკლე სახელწოდება
+- `price`: ფასი (ლარებში, string ფორმატში)
+- `category`: პროდუქტის კატეგორია
+- `link`: პროდუქტის გვერდის პირდაპირი ლინკი zoommer.ge-ზე
+- `image`: პროდუქტის ფოტოს URL
+- `product_title_detail`: დეტალური პროდუქტის სახელწოდება
+- `description`: პროდუქტის აღწერა
+- `specs`: დეტალური ტექნიკური მახასიათებლები (ქართულ ენაზე)
+- `similarity_score`: საძიებო მოთხოვნასთან მსგავსების ხარისხი (0-1)
+
+**კატეგორიის ინფორმაცია (selected_category):**
+- `category_name`: მთავარი კატეგორია
+- `subcategory_name`: ქვეკატეგორია
+- `subcategory_url`: კატეგორიის URL
 
 #### `GET /stats`
 ჩატვირთული მონაცემების სტატისტიკა.
